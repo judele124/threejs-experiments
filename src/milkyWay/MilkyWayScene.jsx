@@ -8,12 +8,17 @@ const MilkyWayScene = () => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
   const [isMoving, setIsMoving] = useState(false);
+  const lastClickTimeRef = useRef(0);
 
   function isMobileDevice() {
     return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   }
 
   const isMobile = isMobileDevice();
+
+  useEffect(() => {
+    console.log("isMoving", isMoving);
+  }, [isMoving]);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -415,6 +420,8 @@ const MilkyWayScene = () => {
         if (progress < 1) {
           requestAnimationFrame(animate);
         } else {
+          console.log("Camera movement complete", progress);
+
           setIsMoving(false);
           // Show description text after movement
           if (currentWaypoint < waypoints.length) {
@@ -475,6 +482,13 @@ const MilkyWayScene = () => {
 
     const onPointerClick = () => {
       if (isMoving) return;
+
+      const now = Date.now();
+      if (now - lastClickTimeRef.current < (isMobile ? 2600 : 2000)) {
+        return;
+      }
+      lastClickTimeRef.current = now;
+
       if (currentWaypoint === waypoints.length - 1) {
         removeAllWaypoints();
         transformStarsToHeart();
