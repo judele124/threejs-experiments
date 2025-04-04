@@ -7,6 +7,7 @@ import gsap from "gsap";
 const MilkyWayScene = () => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
+  const isMobile = window.innerWidth < 768;
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -479,7 +480,7 @@ const MilkyWayScene = () => {
         return;
       }
 
-      if (hoveredWaypoint !== null) {
+      if (isMobile || (!isMobile && hoveredWaypoint !== null)) {
         removeAllWaypoints();
 
         if (waypoints[currentWaypoint]) {
