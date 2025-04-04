@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import "./milkyWay.css";
@@ -7,6 +7,13 @@ import gsap from "gsap";
 const MilkyWayScene = () => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
+  const [isMoving, setIsMoving] = useState(false);
+
+  function isMobileDevice() {
+    return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }
+
+  const isMobile = isMobileDevice();
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -93,7 +100,6 @@ const MilkyWayScene = () => {
     ];
 
     let currentWaypoint = 0;
-    let isMoving = false;
     let geometry = null;
     let material = null;
     let points = null;
@@ -380,7 +386,7 @@ const MilkyWayScene = () => {
 
     // Smooth camera movement function
     const moveCamera = (targetPos, targetLook) => {
-      isMoving = true;
+      setIsMoving(true);
       const duration = 6000; // 6 seconds for smoother movement
       const startPos = camera.position.clone();
       const startLook = controls.target.clone();
@@ -409,7 +415,7 @@ const MilkyWayScene = () => {
         if (progress < 1) {
           requestAnimationFrame(animate);
         } else {
-          isMoving = false;
+          setIsMoving(false);
           // Show description text after movement
           if (currentWaypoint < waypoints.length) {
             createText(waypoints[currentWaypoint].description);
@@ -479,7 +485,7 @@ const MilkyWayScene = () => {
         return;
       }
 
-      if (hoveredWaypoint !== null) {
+      if (isMobile || (!isMobile && hoveredWaypoint !== null)) {
         removeAllWaypoints();
 
         if (waypoints[currentWaypoint]) {
