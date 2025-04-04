@@ -1,7 +1,8 @@
 import React, { useRef, useEffect } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import "./milkyway.css";
+import "./MilkyWayScene.css";
+import gsap from "gsap";
 
 const MilkyWayScene = () => {
   const mountRef = useRef(null);
@@ -24,16 +25,13 @@ const MilkyWayScene = () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     mountRef.current.appendChild(renderer.domElement);
 
-    // Add orbit controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
 
-    // Raycaster for waypoint selection
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
 
-    // Galaxy parameters
     const params = {
       particles: 50000,
       trailParticles: 30000,
@@ -78,6 +76,11 @@ const MilkyWayScene = () => {
         description: "הלב שלי מצא את הבית שלו בך.",
       },
       {
+        position: new THREE.Vector3(-20, 0, -20),
+        lookAt: new THREE.Vector3(0, 0, -30),
+        description: "אהבתי אליך עמוקה כמו היקום",
+      },
+      {
         position: new THREE.Vector3(15, 2, -15),
         lookAt: new THREE.Vector3(0, 0, 0),
         description: "אני אוהב אותך",
@@ -104,7 +107,33 @@ const MilkyWayScene = () => {
     // Create floating text that follows the camera
     const createText = (text) => {
       const textDiv = document.getElementById("text-display");
-      textDiv.textContent = text;
+      textDiv.textContent = "";
+
+      gsap.to(textDiv, { width: "auto", duration: 0 });
+      let index = 0;
+
+      function typeNextLetter() {
+        if (index < text.length) {
+          textDiv.textContent += text[index];
+          index++;
+          setTimeout(typeNextLetter, 100);
+        } else {
+          gsap.to(textDiv, {
+            borderLeftColor: "transparent",
+            repeat: -1,
+            yoyo: true,
+            duration: 0.5,
+          });
+        }
+      }
+
+      if (currentWaypoint === waypoints.length - 1) {
+        gsap.to(textDiv, {
+          fontSize: "1.5em",
+        });
+      }
+
+      typeNextLetter();
     };
 
     // Create star marker for waypoints
@@ -148,7 +177,6 @@ const MilkyWayScene = () => {
         originalGlowColor: glow.material.color.clone(),
       };
     };
-
     // Remove all waypoint markers
     const removeAllWaypoints = () => {
       waypointMarkers.forEach((wp) => {
@@ -348,7 +376,7 @@ const MilkyWayScene = () => {
     camera.lookAt(waypoints[0].lookAt);
 
     // Show initial text
-    createText(waypoints[0].description);
+    // createText(waypoints[0].description);
 
     // Smooth camera movement function
     const moveCamera = (targetPos, targetLook) => {
@@ -383,7 +411,9 @@ const MilkyWayScene = () => {
         } else {
           isMoving = false;
           // Show description text after movement
-          createText(waypoints[currentWaypoint].description);
+          if (currentWaypoint < waypoints.length) {
+            createText(waypoints[currentWaypoint].description);
+          }
           // Show next waypoint if not at the end
           if (currentWaypoint < waypoints.length - 1) {
             updateWaypoints();
@@ -404,7 +434,10 @@ const MilkyWayScene = () => {
       raycaster.setFromCamera(pointer, camera);
 
       // Reset previous hover state
-      if (hoveredWaypoint !== null) {
+      if (
+        hoveredWaypoint !== null &&
+        hoveredWaypoint < waypointMarkers.length
+      ) {
         const wp = waypointMarkers[hoveredWaypoint];
         wp.star.material.color.copy(wp.originalStarColor);
         wp.glow.material.color.copy(wp.originalGlowColor);
@@ -436,7 +469,15 @@ const MilkyWayScene = () => {
 
     const onPointerClick = () => {
       if (isMoving) return;
-      console.log("click", currentWaypoint);
+      if (currentWaypoint === waypoints.length - 1) {
+        removeAllWaypoints();
+        transformStarsToHeart();
+        moveCamera(
+          new THREE.Vector3(230, 200, 0),
+          waypoints[0]?.lookAt || new THREE.Vector3(0, 0, 0)
+        );
+        return;
+      }
 
       if (hoveredWaypoint !== null) {
         removeAllWaypoints();
@@ -445,15 +486,6 @@ const MilkyWayScene = () => {
           const waypoint = waypoints[currentWaypoint];
           moveCamera(waypoint.position, waypoint.lookAt);
           currentWaypoint++;
-        }
-
-        if (currentWaypoint === waypoints.length) {
-          removeAllWaypoints();
-          transformStarsToHeart();
-          moveCamera(
-            new THREE.Vector3(230, 200, 0),
-            waypoints[0]?.lookAt || new THREE.Vector3(0, 0, 0)
-          );
         }
 
         controls.enabled = false;
@@ -533,11 +565,10 @@ const MilkyWayScene = () => {
   return (
     <div className="galaxy-container">
       <div ref={mountRef} className="canvas-container" />
-      {/* <div className="tour-info">
-        <h2>Galaxy Tour</h2>
-        <p>Click on the star markers to move through the galaxy tour</p>
-      </div> */}
-      <div id="text-display">llll</div>
+      <div
+        className="transition-transform duration-1000 ease-in-out"
+        id="text-display"
+      ></div>
     </div>
   );
 };
